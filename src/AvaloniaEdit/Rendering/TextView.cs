@@ -1954,10 +1954,10 @@ namespace AvaloniaEdit.Rendering
 
         bool ILogicalScrollable.BringIntoView(Control target, Rect rectangle)
         {
-            if (rectangle == default || target == null || target == this || !this.IsVisualAncestorOf(target))
-            {
-                return false;
-            }
+            //if (rectangle == default || target == null || target == this || !this.IsVisualAncestorOf(target))
+            //{
+            //    return false;
+            //}
 
             // TODO:
             // Convert rectangle into our coordinate space.

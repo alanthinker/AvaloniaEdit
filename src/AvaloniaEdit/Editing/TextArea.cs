@@ -697,12 +697,12 @@ namespace AvaloniaEdit.Editing
 
             TextView.HighlightedLine = Caret.Line;
 
-            ScrollToLine(Caret.Line, 2);
+            //ScrollToLine(Caret.Line, 2);
 
-            Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                (this as ILogicalScrollable).RaiseScrollInvalidated(EventArgs.Empty);
-            });
+            //Dispatcher.UIThread.InvokeAsync(() =>
+            //{
+            //    (this as ILogicalScrollable).RaiseScrollInvalidated(EventArgs.Empty);
+            //});
         }
 
         public static readonly DirectProperty<TextArea, ObservableCollection<Control>> LeftMarginsProperty
