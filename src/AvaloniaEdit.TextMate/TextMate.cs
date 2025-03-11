@@ -10,6 +10,8 @@ namespace AvaloniaEdit.TextMate
 {
     public static class TextMate
     {
+
+
         public static void RegisterExceptionHandler(Action<Exception> handler)
         {
             _exceptionHandler = handler;
@@ -18,13 +20,16 @@ namespace AvaloniaEdit.TextMate
         public static Installation InstallTextMate(
             this TextEditor editor,
             IRegistryOptions registryOptions,
-            bool initCurrentDocument = true)
+            bool initCurrentDocument = true,
+            Registry textMateRegistry = null)
         {
-            return new Installation(editor, registryOptions, initCurrentDocument);
+            return new Installation(editor, registryOptions, initCurrentDocument, textMateRegistry = null);
         }
 
         public class Installation
         {
+            static AlanLog.LogWrapper _log = AlanLog.MyLogManager.GetLogger("AvaloniaEdit.TextMate.TextMate.Installation");
+
             private IRegistryOptions _textMateRegistryOptions;
             private Registry _textMateRegistry;
             private TextEditor _editor;
@@ -38,10 +43,18 @@ namespace AvaloniaEdit.TextMate
 
             public event EventHandler<Installation> AppliedTheme;
 
-            public Installation(TextEditor editor, IRegistryOptions registryOptions, bool initCurrentDocument = true)
+            public Installation(TextEditor editor, IRegistryOptions registryOptions, bool initCurrentDocument = true, Registry textMateRegistry = null)
             {
                 _textMateRegistryOptions = registryOptions;
-                _textMateRegistry = new Registry(registryOptions);
+
+                if (textMateRegistry != null)
+                {
+                    _textMateRegistry = textMateRegistry;
+                }
+                else
+                {
+                    _textMateRegistry = new Registry(registryOptions);
+                }
 
                 _editor = editor;
                 SetTheme(registryOptions.GetDefaultTheme());
@@ -56,7 +69,23 @@ namespace AvaloniaEdit.TextMate
 
             public void SetGrammar(string scopeName)
             {
-                SetGrammarInternal(_textMateRegistry.LoadGrammar(scopeName));
+                IGrammar grammar;
+                using (AlanLog.TimeSpanLogger tsl = new AlanLog.TimeSpanLogger(_log, "SetGrammar_LoadGrammar"))
+                {
+                    grammar = _textMateRegistry.LoadGrammar(scopeName);
+                }
+                using (AlanLog.TimeSpanLogger tsl = new AlanLog.TimeSpanLogger(_log, "SetGrammar_SetGrammarInternal"))
+                {
+                    SetGrammarInternal(grammar);
+                }
+            }
+
+            public void SetGrammar(IGrammar grammar)
+            {
+                using (AlanLog.TimeSpanLogger tsl = new AlanLog.TimeSpanLogger(_log, "SetGrammar_SetGrammarInternal"))
+                {
+                    SetGrammarInternal(grammar);
+                }
             }
 
             public void SetGrammarFile(string path)
@@ -67,8 +96,14 @@ namespace AvaloniaEdit.TextMate
             private void SetGrammarInternal(IGrammar grammar)
             {
                 _grammar = grammar;
-                GetOrCreateTransformer().SetGrammar(_grammar);
-                _editor.TextArea.TextView.Redraw();
+                using (AlanLog.TimeSpanLogger tsl = new AlanLog.TimeSpanLogger(_log, "SetGrammarInternal_SetGrammar"))
+                {
+                    GetOrCreateTransformer().SetGrammar(_grammar);
+                }
+                using (AlanLog.TimeSpanLogger tsl = new AlanLog.TimeSpanLogger(_log, "SetGrammarInternal_Redraw"))
+                {
+                    _editor.TextArea.TextView.Redraw();
+                }
             }
 
             public bool TryGetThemeColor(string colorKey, out string colorString)
@@ -89,7 +124,7 @@ namespace AvaloniaEdit.TextMate
 
                 _themeColorsDictionary = registryTheme.GetGuiColorDictionary();
 
-                AppliedTheme?.Invoke(this,this);
+                AppliedTheme?.Invoke(this, this);
             }
 
             public void Dispose()
