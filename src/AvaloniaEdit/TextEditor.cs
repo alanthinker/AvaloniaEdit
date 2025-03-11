@@ -76,7 +76,7 @@ namespace AvaloniaEdit
         /// </summary>
         protected TextEditor(TextArea textArea) : this(textArea, new TextDocument())
         {
-            
+
         }
 
         protected TextEditor(TextArea textArea, TextDocument document)
@@ -673,7 +673,7 @@ namespace AvaloniaEdit
         /// </summary>
         public void Delete()
         {
-            if(CanDelete)
+            if (CanDelete)
             {
                 ApplicationCommands.Delete.Execute(null, TextArea);
             }
@@ -852,7 +852,7 @@ namespace AvaloniaEdit
         /// </summary>
         public bool CanRedo
         {
-           get { return ApplicationCommands.Redo.CanExecute(null, TextArea); }
+            get { return ApplicationCommands.Redo.CanExecute(null, TextArea); }
         }
 
         /// <summary>
@@ -909,6 +909,12 @@ namespace AvaloniaEdit
         public bool CanSearch
         {
             get { return searchPanel != null; }
+        }
+
+        // textArea Focus 才起作用, 所以这里覆盖父类的 Focus 方法, 防止误用.
+        public new void Focus(NavigationMethod method = NavigationMethod.Unspecified, KeyModifiers keyModifiers = KeyModifiers.None)
+        {
+            this.textArea.Focus(method, keyModifiers);
         }
 
         /// <summary>
