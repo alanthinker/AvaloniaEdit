@@ -237,7 +237,7 @@ namespace AvaloniaEdit.Demo
 
             string scopeName = _registryOptions.GetScopeByLanguageId(language.Id);
 
-            _textMateInstallation.SetGrammar(null);
+            _textMateInstallation.SetGrammar(null as string);
             _textEditor.Document = new TextDocument(ResourceLoader.LoadSampleFile(scopeName));
             _textMateInstallation.SetGrammar(scopeName);
 
