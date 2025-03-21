@@ -28,7 +28,7 @@ namespace AvaloniaEdit.TextMate
 
         public class Installation
         {
-            static AlanLog.LogWrapper _log = AlanLog.MyLogManager.GetLogger("AvaloniaEdit.TextMate.TextMate.Installation");
+            static AlanLog.LogWrapper _log = AlanLog.MyLogManager.GetLogger("AvaloniaEdit.TextMate.TextMate+Installation");
 
             private IRegistryOptions _textMateRegistryOptions;
             private Registry _textMateRegistry;
