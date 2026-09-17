@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -1173,6 +1173,15 @@ namespace AvaloniaEdit.Editing
         {
             private TextArea _textArea;
 
+            // IME 组合 (拼音) 显示图层, 复现普通 TextBox 在输入框内原地上显示拼音的行为.
+            private PreeditLayer _preeditLayer;
+
+            // 当前组合 (preedit) 文本; 光标移动时用它重新定位组合文本.
+            private string _currentPreeditText;
+
+            // 组合文本内的光标位置 (null = 末尾).
+            private int? _currentCursorPos;
+
             public TextAreaTextInputMethodClient()
             {
 
@@ -1202,7 +1211,7 @@ namespace AvaloniaEdit.Editing
 
             public override Visual TextViewVisual => _textArea;
 
-            public override bool SupportsPreedit => false;
+            public override bool SupportsPreedit => true;
 
             public override bool SupportsSurroundingText => true;
 
@@ -1256,7 +1265,13 @@ namespace AvaloniaEdit.Editing
 
                 if (_textArea != null)
                 {
+                    EnsurePreeditLayer();
                     _textArea.Caret.PositionChanged += Caret_PositionChanged;
+                }
+                else
+                {
+                    _currentPreeditText = null;
+                    _preeditLayer?.Clear();
                 }
 
                 RaiseTextViewVisualChanged();
@@ -1271,11 +1286,69 @@ namespace AvaloniaEdit.Editing
                 RaiseCursorRectangleChanged();
                 RaiseSurroundingTextChanged();
                 RaiseSelectionChanged();
+
+                // 组合进行中光标若发生移动, 让组合 (拼音) 文本跟随光标重新定位.
+                if (_textArea != null && _preeditLayer != null && _currentPreeditText != null)
+                {
+                    _preeditLayer.SetPreedit(_currentPreeditText, GetCaretStartDocumentPos(), _currentCursorPos);
+                }
+            }
+
+            // 获取光标左上角的文档坐标, 作为组合 (拼音) 文本的起点.
+            private Point GetCaretStartDocumentPos()
+            {
+                if (_textArea == null)
+                    return default;
+
+                var rect = _textArea.Caret.CalculateCaretRectangle();
+                return new Point(rect.X, rect.Y);
+            }
+
+            // 惰性创建并挂载组合文本图层: 插入到光标图层之下、正文文本之上.
+            private void EnsurePreeditLayer()
+            {
+                if (_preeditLayer == null && _textArea != null && _textArea.TextView != null)
+                {
+                    _preeditLayer = new PreeditLayer(_textArea.TextView);
+                    _textArea.TextView.InsertLayer(_preeditLayer, KnownLayer.Caret, LayerInsertionPosition.Below);
+                }
             }
 
             public override void SetPreeditText(string text)
             {
+                SetPreeditText(text, null);
+            }
 
+            // Windows 的 IMM32 主要调用单参 SetPreeditText(string); 这里同时重写双参版本,
+            // 以兼容其它 (例如 Linux/DBus、macOS) 平台会传入光标位置的调用方式.
+            public override void SetPreeditText(string text, int? cursorPos)
+            {
+                if (_textArea == null)
+                    return;
+
+                if (string.IsNullOrEmpty(text))
+                {
+                    // 组合结束 / 提交 / 失焦时清除已显示的拼音, 并恢复真实光标.
+                    _currentPreeditText = null;
+                    _currentCursorPos = null;
+                    _preeditLayer?.Clear();
+                    // 失焦时不恢复 (OnLostFocus 已隐藏真实光标); 仅在有焦点时恢复闪烁.
+                    if (_textArea.IsFocused)
+                    {
+                        _textArea.Caret.Show();
+                    }
+                    return;
+                }
+
+                EnsurePreeditLayer();
+
+                // 隐藏真实文档光标, 改由 PreeditLayer 在组合文本末尾显示闪烁光标,
+                // 从而让光标跟随到拼音末尾 (与普通 TextBox 的行为一致).
+                _textArea.Caret.Hide();
+
+                _currentPreeditText = text;
+                _currentCursorPos = cursorPos;
+                _preeditLayer?.SetPreedit(text, GetCaretStartDocumentPos(), cursorPos);
             }
         }
     }
