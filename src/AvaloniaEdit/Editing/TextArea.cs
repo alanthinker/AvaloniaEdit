@@ -1290,18 +1290,38 @@ namespace AvaloniaEdit.Editing
                 // 组合进行中光标若发生移动, 让组合 (拼音) 文本跟随光标重新定位.
                 if (_textArea != null && _preeditLayer != null && _currentPreeditText != null)
                 {
-                    _preeditLayer.SetPreedit(_currentPreeditText, GetCaretStartDocumentPos(), _currentCursorPos);
+                    var anchor = GetPreeditAnchor();
+                    _preeditLayer.SetPreedit(_currentPreeditText, anchor.caretRect, anchor.baselineDocY, _currentCursorPos);
                 }
             }
 
-            // 获取光标左上角的文档坐标, 作为组合 (拼音) 文本的起点.
-            private Point GetCaretStartDocumentPos()
+            // 获取组合 (拼音) 文本定位所需锚点: 光标矩形 (起点 + 整行 TextTop/高度) 与整行基线的文档 Y.
+            // 整行基线 (VisualYPosition.Baseline) 是正文字形基线所在, 用它把拼音基线对齐到正文, 避免"抬高半截".
+            private (Rect caretRect, double baselineDocY) GetPreeditAnchor()
             {
-                if (_textArea == null)
-                    return default;
+                var caret = _textArea.Caret;
+                var caretRect = caret.CalculateCaretRectangle();
 
-                var rect = _textArea.Caret.CalculateCaretRectangle();
-                return new Point(rect.X, rect.Y);
+                // 退化值 (取不到整行基线时用), 不影响基本显示.
+                var baselineDocY = caretRect.Y + caretRect.Height / 2;
+                try
+                {
+                    var textView = _textArea.TextView;
+                    if (textView?.Document != null)
+                    {
+                        var pos = caret.NonValidatedPosition;
+                        var documentLine = textView.Document.GetLineByNumber(pos.Line);
+                        var visualLine = textView.GetOrConstructVisualLine(documentLine);
+                        var textLine = visualLine.GetTextLine(pos.VisualColumn, pos.IsAtEndOfLine);
+                        baselineDocY = visualLine.GetTextLineVisualYPosition(textLine, VisualYPosition.Baseline);
+                    }
+                }
+                catch
+                {
+                    // 保留退化值.
+                }
+
+                return (caretRect, baselineDocY);
             }
 
             // 惰性创建并挂载组合文本图层: 插入到光标图层之下、正文文本之上.
@@ -1348,7 +1368,8 @@ namespace AvaloniaEdit.Editing
 
                 _currentPreeditText = text;
                 _currentCursorPos = cursorPos;
-                _preeditLayer?.SetPreedit(text, GetCaretStartDocumentPos(), cursorPos);
+                var anchor = GetPreeditAnchor();
+                _preeditLayer?.SetPreedit(text, anchor.caretRect, anchor.baselineDocY, cursorPos);
             }
         }
     }
