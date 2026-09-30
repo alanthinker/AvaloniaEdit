@@ -2,8 +2,9 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AvaloniaVersion>11.3.22</AvaloniaVersion>
-    <AvaloniaSampleVersion>11.3.22</AvaloniaSampleVersion>
+    <!-- 2026-09-24: 升级到官方 Avalonia 12.1.2 (与 ChatGptAva/Chess2/pcm3 工作区一致) -->
+    <AvaloniaVersion>12.1.2</AvaloniaVersion>
+    <AvaloniaSampleVersion>12.1.2</AvaloniaSampleVersion>
     <TextMateSharpVersion>1.0.57</TextMateSharpVersion>
     <VersionSuffix>beta</VersionSuffix>
 

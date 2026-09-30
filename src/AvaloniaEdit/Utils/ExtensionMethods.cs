@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -217,7 +217,7 @@ namespace AvaloniaEdit.Utils
         #region Snap to device pixels
         public static Point SnapToDevicePixels(this Point p, Visual targetVisual)
         {
-            var root = targetVisual.GetVisualRoot();
+            var root = TopLevel.GetTopLevel(targetVisual);
 
             // Get the root control and its scaling
             var scaling = new Vector(root.RenderScaling, root.RenderScaling);

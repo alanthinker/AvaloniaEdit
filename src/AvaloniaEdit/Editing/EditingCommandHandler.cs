@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -423,7 +423,7 @@ namespace AvaloniaEdit.Editing
             return true;
         }
 
-        public static bool ConfirmDataFormat(TextArea textArea, DataObject dataObject, string format)
+        public static bool ConfirmDataFormat<T>(TextArea textArea, DataTransfer dataObject, DataFormat<T> format) where T : class
         {
             return true;
             ////var e = new DataObjectSettingDataEventArgs(dataObject, format);
@@ -435,7 +435,12 @@ namespace AvaloniaEdit.Editing
         {
             try
             {
-                TopLevel.GetTopLevel(visual)?.Clipboard?.SetTextAsync(text);
+                // Avalonia 12: Clipboard 不再提供 SetTextAsync(string), 改用 DataTransfer + SetDataAsync.
+                var dataTransfer = new DataTransfer();
+                var item = new DataTransferItem();
+                item.SetText(text);
+                dataTransfer.Add(item);
+                TopLevel.GetTopLevel(visual)?.Clipboard?.SetDataAsync(dataTransfer);
             }
             catch (Exception)
             {
@@ -506,7 +511,9 @@ namespace AvaloniaEdit.Editing
                 string text = null;
                 try
                 {
-                    text = await TopLevel.GetTopLevel(textArea)?.Clipboard?.GetTextAsync();
+                    // Avalonia 12: Clipboard.GetTextAsync() 已移除, 改用 TryGetDataAsync + TryGetTextAsync.
+                    var data = await TopLevel.GetTopLevel(textArea)?.Clipboard?.TryGetDataAsync();
+                    text = data != null ? await data.TryGetTextAsync() : null;
                 }
                 catch (Exception)
                 {
@@ -535,11 +542,11 @@ namespace AvaloniaEdit.Editing
             }
         }
 
-        internal static string GetTextToPaste(IDataObject dataObject, TextArea textArea)
+        internal static string GetTextToPaste(IDataTransfer dataObject, TextArea textArea)
         {
-            if (dataObject.Contains(DataFormats.Text))
+            if (dataObject.Contains(DataFormat.Text))
             {
-                return GetTextToPaste((string)dataObject.Get(DataFormats.Text), textArea);
+                return GetTextToPaste(dataObject.TryGetText(), textArea);
             }
 
             return null;

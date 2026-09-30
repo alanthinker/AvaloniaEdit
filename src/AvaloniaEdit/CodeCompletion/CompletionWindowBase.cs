@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -72,7 +72,7 @@ namespace AvaloniaEdit.CodeCompletion
         public CompletionWindowBase(TextArea textArea) : base()
         {
             TextArea = textArea ?? throw new ArgumentNullException(nameof(textArea));
-            _parentWindow = textArea.GetVisualRoot() as Window;
+            _parentWindow = TopLevel.GetTopLevel(textArea) as Window;
 
 
             AddHandler(PointerReleasedEvent, OnMouseUp, handledEventsToo: true);
@@ -129,7 +129,7 @@ namespace AvaloniaEdit.CodeCompletion
 
         private void AttachEvents()
         {
-            ((ISetLogicalParent)this).SetParent(TextArea.GetVisualRoot() as ILogical);
+            ((ISetLogicalParent)this).SetParent(TopLevel.GetTopLevel(TextArea) as ILogical);
 
             _document = TextArea.Document;
             if (_document != null)

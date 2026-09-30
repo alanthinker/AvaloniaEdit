@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -72,6 +72,8 @@ namespace AvaloniaEdit.Editing
         private SelectionMode _mode;
         private AnchorSegment _startWord;
         private Point _possibleDragStartMousePos;
+        // Avalonia 12: DragDrop.DoDragDropAsync 需要原始的 PointerPressedEventArgs, 记录在按下时.
+        private PointerPressedEventArgs _possibleDragStartArgs;
 
         #region Constructor + Attach + Detach
         public SelectionMouseHandler(TextArea textArea)
@@ -174,7 +176,7 @@ namespace AvaloniaEdit.Editing
 
         DragDropEffects GetEffect(DragEventArgs e)
         {
-            if (e.Data.Contains(DataFormats.Text))
+            if (e.DataTransfer.Contains(DataFormat.Text))
             {
                 e.Handled = true;
                 int visualColumn;
@@ -240,10 +242,12 @@ namespace AvaloniaEdit.Editing
                         ////if (pastingEventArgs.CommandCancelled)
                         ////    return;
 
-                        string text = EditingCommandHandler.GetTextToPaste(e.Data, TextArea);
+                        string text = EditingCommandHandler.GetTextToPaste(e.DataTransfer, TextArea);
                         if (text == null)
                             return;
-                        bool rectangular = e.Data.Contains(RectangleSelection.RectangularSelectionDataType);
+                        // Avalonia 12: 自定义格式需用 DataFormat 包装; 与 RectangleSelection.CreateDataObject 的
+                        // CreateBytesApplicationFormat 保持一致 (bytes 应用格式).
+                        bool rectangular = e.DataTransfer.Contains(DataFormat.CreateBytesApplicationFormat(RectangleSelection.RectangularSelectionDataType));
 
                         // Mark the undo group with the currentDragDescriptor, if the drag
                         // is originating from the same control. This allows combining
@@ -320,7 +324,7 @@ namespace AvaloniaEdit.Editing
         #region Start Drag
         object currentDragDescriptor;
 
-        async void StartDrag(PointerEventArgs e)
+        async void StartDrag(PointerPressedEventArgs e)
         {
             // prevent nested StartDrag calls
             _mode = SelectionMode.Drag;
@@ -328,7 +332,7 @@ namespace AvaloniaEdit.Editing
             // mouse capture and Drag'n'Drop doesn't mix
             e.Pointer.Capture(null);
 
-            DataObject dataObject = TextArea.Selection.CreateDataObject(TextArea);
+            DataTransfer dataObject = TextArea.Selection.CreateDataObject(TextArea);
 
             DragDropEffects allowedEffects = DragDropEffects.Copy | DragDropEffects.Move | DragDropEffects.Link;
             var deleteOnMove = TextArea.Selection.Segments.Select(s => new AnchorSegment(TextArea.Document, s)).ToList();
@@ -356,7 +360,7 @@ namespace AvaloniaEdit.Editing
                 try
                 {
                     Debug.WriteLine("DoDragDrop with allowedEffects=" + allowedEffects);
-                    resultEffect = await DragDrop.DoDragDrop(e, dataObject, allowedEffects);
+                    resultEffect = await DragDrop.DoDragDropAsync(e, dataObject, allowedEffects);
                     Debug.WriteLine("DoDragDrop done, resultEffect=" + resultEffect);
                 }
                 catch (Exception ex)
@@ -457,6 +461,7 @@ namespace AvaloniaEdit.Editing
                             {
                                 _mode = SelectionMode.PossibleDragStart;
                                 _possibleDragStartMousePos = e.GetPosition(TextArea);
+                                _possibleDragStartArgs = e;
                             }
                             e.Handled = true;
                             return;
@@ -677,7 +682,8 @@ namespace AvaloniaEdit.Editing
                 if (Math.Abs(mouseMovement.X) > MinimumHorizontalDragDistance
                     || Math.Abs(mouseMovement.Y) > MinimumVerticalDragDistance)
                 {
-                    StartDrag(e);
+                    // Avalonia 12: 使用按下时的 PointerPressedEventArgs 发起拖拽.
+                    StartDrag(_possibleDragStartArgs);
                 }
             }
         }

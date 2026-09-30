@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -266,17 +266,19 @@ namespace AvaloniaEdit.Editing
         /// <summary>
         /// Creates a data object containing the selection's text.
         /// </summary>
-        public virtual DataObject CreateDataObject(TextArea textArea)
+        public virtual DataTransfer CreateDataObject(TextArea textArea)
         {
-            DataObject data = new DataObject();
+            DataTransfer data = new DataTransfer();
 
             // Ensure we use the appropriate newline sequence for the OS
             string text = TextUtilities.NormalizeNewLines(GetText(), Environment.NewLine);
 
             // Enable drag/drop to Word, Notepad++ and others
-            if (EditingCommandHandler.ConfirmDataFormat(textArea, data, DataFormats.Text))
+            if (EditingCommandHandler.ConfirmDataFormat(textArea, data, DataFormat.Text))
             {
-                data.Set(DataFormats.Text, text);
+                var item = new DataTransferItem();
+                item.Set(DataFormat.Text, text);
+                data.Add(item);
             }
 
             // Enable drag/drop to SciTe:

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Avalonia;
+using Avalonia.Input;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Utils;
 
@@ -389,15 +390,17 @@ namespace AvaloniaEdit.Editing
         /// </summary>
         public const string RectangularSelectionDataType = "AvalonEditRectangularSelection";
 
-        public override Avalonia.Input.DataObject CreateDataObject(TextArea textArea)
+        public override Avalonia.Input.DataTransfer CreateDataObject(TextArea textArea)
         {
             var data = base.CreateDataObject(textArea);
 
-            if (EditingCommandHandler.ConfirmDataFormat(textArea, data, RectangularSelectionDataType))
+            // Avalonia 12: 字符串命名格式需用 DataFormat.CreateBytesApplicationFormat 生成, 内容改用 byte[] 项.
+            var format = DataFormat.CreateBytesApplicationFormat(RectangularSelectionDataType);
+            if (EditingCommandHandler.ConfirmDataFormat(textArea, data, format))
             {
-                MemoryStream isRectangle = new MemoryStream(1);
-                isRectangle.WriteByte(1);
-                data.Set(RectangularSelectionDataType, isRectangle);
+                var item = new DataTransferItem();
+                item.Set(format, [(byte)1]);
+                data.Add(item);
             }
             return data;
         }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -2072,6 +2072,12 @@ namespace AvaloniaEdit.Rendering
         Size ILogicalScrollable.ScrollSize => new Size(10, 50);
 
         Size ILogicalScrollable.PageScrollSize => new Size(10, 100);
+
+        // Avalonia 12: IScrollable 新增只读 CanHorizontallyScroll/CanVerticallyScroll,
+        // 需与 ILogicalScrollable 的 get+set 版本分别显式实现 (显式接口实现按接口区分).
+        bool IScrollable.CanHorizontallyScroll => _canHorizontallyScroll;
+
+        bool IScrollable.CanVerticallyScroll => _canVerticallyScroll;
 
         Size IScrollable.Extent => _scrollExtent;
 
